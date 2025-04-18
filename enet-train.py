@@ -11,11 +11,11 @@ import torch.nn.functional as F
 
 # ---------- CONFIG ----------
 
-TRAIN_IMAGE_DIR = "/home/kajm20/mnist/ILSVRC/Data/CLS-LOC/train"
-TRAIN_ANNOTATION_DIR = "/home/kajm20/mnist/ILSVRC/Annotations/CLS-LOC/train"
-VAL_IMAGE_DIR = "/home/kajm20/mnist/ILSVRC/Data/CLS-LOC/val"
-VAL_ANNOTATION_DIR = "/home/kajm20/mnist/ILSVRC/Annotations/CLS-LOC/val"
-SYNSET_PATH = "/home/kajm20/mnist/ILSVRC/LOC_synset_mapping.txt"
+TRAIN_IMAGE_DIR = "/its/home/kajm20/mnist/ILSVRC/Data/CLS-LOC/train"
+TRAIN_ANNOTATION_DIR = "/its/home/kajm20/mnist/ILSVRC/Annotations/CLS-LOC/train"
+VAL_IMAGE_DIR = "/its/home/kajm20/mnist/ILSVRC/Data/CLS-LOC/val"
+VAL_ANNOTATION_DIR = "/its/home/kajm20/mnist/ILSVRC/Annotations/CLS-LOC/val"
+SYNSET_PATH = "/its/home/kajm20/mnist/ILSVRC/LOC_synset_mapping.txt"
 BATCH_SIZE = 64
 NUM_EPOCHS = 20
 NUM_WORKERS = min(4, os.cpu_count())
