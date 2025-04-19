@@ -104,4 +104,4 @@ dependencies:
       - torchvision==0.21.0
       - tqdm==4.67.1
       - triton==3.2.0
-prefix: /home/kajm20/miniconda3/envs/mnist
+#prefix: /home/kajm20/miniconda3/envs/mnist
