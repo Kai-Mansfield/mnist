@@ -7,15 +7,13 @@ from torch.utils.data import Dataset, DataLoader
 from PIL import Image
 import xml.etree.ElementTree as ET
 from tqdm import tqdm
-import torch.nn.functional as F
 
 # ---------- CONFIG ----------
 
 TRAIN_IMAGE_DIR = "/its/home/kajm20/ILSVRC/Data/CLS-LOC/train"
 TRAIN_ANNOTATION_DIR = "/its/home/kajm20/ILSVRC/Annotations/CLS-LOC/train"
-VAL_IMAGE_DIR = "/its/home/kajm20/ILSVRC/Data/CLS-LOC/val"
-VAL_ANNOTATION_DIR = "/its/home/kajm20/ILSVRC/Annotations/CLS-LOC/val"
 SYNSET_PATH = "/its/home/kajm20/ILSVRC/LOC_synset_mapping.txt"
+CHECKPOINT_DIR = "checkpoints"
 BATCH_SIZE = 64
 NUM_EPOCHS = 20
 NUM_WORKERS = min(4, os.cpu_count())
@@ -39,7 +37,7 @@ imagenet_transform = transforms.Compose([
                          std=[0.229, 0.224, 0.225])
 ])
 
-# ---------- DATASETS ----------
+# ---------- DATASET ----------
 
 class ImageNetTrainDataset(Dataset):
     def __init__(self, image_dir, annotation_dir, transform=None):
@@ -47,7 +45,7 @@ class ImageNetTrainDataset(Dataset):
         self.annotation_dir = annotation_dir
         self.transform = transform
         self.annotation_paths = []
-        
+
         for wnid in os.listdir(annotation_dir):
             wnid_dir = os.path.join(annotation_dir, wnid)
             if os.path.isdir(wnid_dir):
@@ -72,39 +70,10 @@ class ImageNetTrainDataset(Dataset):
 
         return image, class_idx
 
-
-class ImageNetValDataset(Dataset):
-    def __init__(self, image_dir, annotation_dir, transform=None):
-        self.image_dir = image_dir
-        self.annotation_dir = annotation_dir
-        self.transform = transform
-        self.annotation_files = sorted(os.listdir(annotation_dir))
-
-    def __len__(self):
-        return len(self.annotation_files)
-
-    def __getitem__(self, idx):
-        annotation_path = os.path.join(self.annotation_dir, self.annotation_files[idx])
-        tree = ET.parse(annotation_path)
-        root = tree.getroot()
-        wordnet_id = root.find("object").find("name").text
-        class_idx = wordnet_to_imagenet[wordnet_id]
-        image_filename = root.find("filename").text + ".JPEG"
-        image_path = os.path.join(self.image_dir, image_filename)
-
-        image = Image.open(image_path).convert("RGB")
-        if self.transform:
-            image = self.transform(image)
-
-        return image, class_idx
-
-# ---------- DATALOADERS ----------
+# ---------- DATALOADER ----------
 
 train_dataset = ImageNetTrainDataset(TRAIN_IMAGE_DIR, TRAIN_ANNOTATION_DIR, transform=imagenet_transform)
-val_dataset = ImageNetValDataset(VAL_IMAGE_DIR, VAL_ANNOTATION_DIR, transform=imagenet_transform)
-
 train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True, num_workers=NUM_WORKERS)
-val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE, shuffle=False, num_workers=NUM_WORKERS)
 
 # ---------- MODEL ----------
 
@@ -115,6 +84,19 @@ model = nn.DataParallel(model).to(DEVICE)
 
 optimizer = optim.Adam(model.parameters(), lr=1e-3)
 criterion = nn.CrossEntropyLoss()
+
+# ---------- RESUME FROM CHECKPOINT ----------
+
+start_epoch = 0
+if os.path.exists(CHECKPOINT_DIR):
+    checkpoints = [f for f in os.listdir(CHECKPOINT_DIR) if f.startswith("efficientnet_epoch")]
+    if checkpoints:
+        checkpoints.sort(key=lambda x: int(x.split("epoch")[1].split(".")[0]))
+        latest = checkpoints[-1]
+        checkpoint_path = os.path.join(CHECKPOINT_DIR, latest)
+        model.load_state_dict(torch.load(checkpoint_path))
+        start_epoch = int(latest.split("epoch")[1].split(".")[0])
+        print(f"Resuming from checkpoint: {checkpoint_path} at epoch {start_epoch}")
 
 # ---------- TRAINING ----------
 
@@ -131,21 +113,15 @@ def train(model, dataloader, optimizer, criterion, epoch):
         running_loss += loss.item()
     print(f"Epoch {epoch+1} Training Loss: {running_loss / len(dataloader):.4f}")
 
-def evaluate(model, dataloader):
-    model.eval()
-    correct, total = 0, 0
-    with torch.no_grad():
-        for images, labels in tqdm(dataloader, desc="Evaluating"):
-            images, labels = images.to(DEVICE), labels.to(DEVICE)
-            outputs = model(images)
-            _, predicted = torch.max(outputs, 1)
-            total += labels.size(0)
-            correct += (predicted == labels).sum().item()
-    return (correct / total) * 100
+def save_checkpoint(model, epoch, save_dir=CHECKPOINT_DIR):
+    os.makedirs(save_dir, exist_ok=True)
+    checkpoint_path = os.path.join(save_dir, f"efficientnet_epoch{epoch+1}.pt")
+    torch.save(model.state_dict(), checkpoint_path)
 
 # ---------- MAIN LOOP ----------
 
-for epoch in range(NUM_EPOCHS):
+for epoch in range(start_epoch, NUM_EPOCHS):
     train(model, train_loader, optimizer, criterion, epoch)
-    val_acc = evaluate(model, val_loader)
-    print(f"Validation Top-1 Accuracy: {val_acc:.2f}%")
+    save_checkpoint(model, epoch)
+
+print("✅ Training completed successfully.")
