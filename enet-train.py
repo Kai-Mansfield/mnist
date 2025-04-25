@@ -88,14 +88,16 @@ criterion = nn.CrossEntropyLoss()
 # ---------- RESUME FROM CHECKPOINT ----------
 
 start_epoch = 0
+
 if os.path.exists(CHECKPOINT_DIR):
-    checkpoints = [f for f in os.listdir(CHECKPOINT_DIR) if f.startswith("efficientnet_epoch")]
+    checkpoints = [f for f in os.listdir(CHECKPOINT_DIR)
+                   if f.startswith(f"efficientnet_bs{BATCH_SIZE}_epoch")]
     if checkpoints:
-        checkpoints.sort(key=lambda x: int(x.split("epoch")[1].split(".")[0]))
+        checkpoints.sort(key=lambda x: int(x.split("_epoch")[1].split(".")[0]))
         latest = checkpoints[-1]
         checkpoint_path = os.path.join(CHECKPOINT_DIR, latest)
         model.load_state_dict(torch.load(checkpoint_path))
-        start_epoch = int(latest.split("epoch")[1].split(".")[0])
+        start_epoch = int(latest.split("_epoch")[1].split(".")[0])
         print(f"Resuming from checkpoint: {checkpoint_path} at epoch {start_epoch}")
 
 # ---------- TRAINING ----------
@@ -113,15 +115,15 @@ def train(model, dataloader, optimizer, criterion, epoch):
         running_loss += loss.item()
     print(f"Epoch {epoch+1} Training Loss: {running_loss / len(dataloader):.4f}")
 
-def save_checkpoint(model, epoch, save_dir=CHECKPOINT_DIR):
+def save_checkpoint(model, epoch, batch_size, save_dir="checkpoints"):
     os.makedirs(save_dir, exist_ok=True)
-    checkpoint_path = os.path.join(save_dir, f"efficientnet_epoch{epoch+1}.pt")
+    checkpoint_path = os.path.join(save_dir, f"efficientnet_bs{batch_size}_epoch{epoch+1}.pt")
     torch.save(model.state_dict(), checkpoint_path)
 
 # ---------- MAIN LOOP ----------
 
-for epoch in range(start_epoch, NUM_EPOCHS):
+for epoch in range(NUM_EPOCHS):
     train(model, train_loader, optimizer, criterion, epoch)
-    save_checkpoint(model, epoch)
+    save_checkpoint(model, epoch, BATCH_SIZE)
 
 print("✅ Training completed successfully.")
