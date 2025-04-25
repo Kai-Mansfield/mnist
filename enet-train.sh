@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --job-name=imagenet_train
-#SBATCH --output=logs/train_%j.out
+#SBATCH --output=logs/train.out
 #SBATCH --error=logs/train_%j.err
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=4
