@@ -4,10 +4,10 @@
 #SBATCH --error=logs/train_%j.err
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=4
-#SBATCH --gres=gpu:1
+#SBATCH --gres=gpu:2
 #SBATCH --mem=32G
 #SBATCH --time=48:00:00
-#SBATCH --partition=compute
+#SBATCH --partition=gpu
 
 # Load conda from bashrc
 source ~/.bashrc
