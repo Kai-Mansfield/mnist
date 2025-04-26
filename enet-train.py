@@ -14,7 +14,7 @@ TRAIN_IMAGE_DIR = "/its/home/kajm20/ILSVRC/Data/CLS-LOC/train"
 TRAIN_ANNOTATION_DIR = "/its/home/kajm20/ILSVRC/Annotations/CLS-LOC/train"
 SYNSET_PATH = "/its/home/kajm20/ILSVRC/LOC_synset_mapping.txt"
 CHECKPOINT_DIR = "checkpoints"
-BATCH_SIZE = 512
+BATCH_SIZE = 64
 NUM_EPOCHS = 20
 NUM_WORKERS = min(4, os.cpu_count())
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -88,7 +88,6 @@ criterion = nn.CrossEntropyLoss()
 # ---------- RESUME FROM CHECKPOINT ----------
 
 start_epoch = 0
-
 if os.path.exists(CHECKPOINT_DIR):
     checkpoints = [f for f in os.listdir(CHECKPOINT_DIR)
                    if f.startswith(f"efficientnet_bs{BATCH_SIZE}_epoch")]
@@ -117,12 +116,23 @@ def train(model, dataloader, optimizer, criterion, epoch):
 
 def save_checkpoint(model, epoch, batch_size, save_dir="checkpoints"):
     os.makedirs(save_dir, exist_ok=True)
-    checkpoint_path = os.path.join(save_dir, f"efficientnet_bs{batch_size}_epoch{epoch+1}.pt")
-    torch.save(model.state_dict(), checkpoint_path)
+
+    # Save new checkpoint first
+    new_ckpt_name = f"efficientnet_bs{batch_size}_epoch{epoch+1}.pt"
+    new_ckpt_path = os.path.join(save_dir, new_ckpt_name)
+    torch.save(model.state_dict(), new_ckpt_path)
+
+    # Now remove all older checkpoints for this batch size
+    for f in os.listdir(save_dir):
+        if (
+            f.startswith(f"efficientnet_bs{batch_size}_epoch")
+            and f != new_ckpt_name
+        ):
+            os.remove(os.path.join(save_dir, f))
 
 # ---------- MAIN LOOP ----------
 
-for epoch in range(NUM_EPOCHS):
+for epoch in range(start_epoch, NUM_EPOCHS):
     train(model, train_loader, optimizer, criterion, epoch)
     save_checkpoint(model, epoch, BATCH_SIZE)
 
