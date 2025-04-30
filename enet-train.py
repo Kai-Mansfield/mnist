@@ -10,9 +10,9 @@ from tqdm import tqdm
 
 # ---------- CONFIG ----------
 
-TRAIN_IMAGE_DIR = "/its/home/kajm20/ILSVRC/Data/CLS-LOC/train"
-TRAIN_ANNOTATION_DIR = "/its/home/kajm20/ILSVRC/Annotations/CLS-LOC/train"
-SYNSET_PATH = "/its/home/kajm20/ILSVRC/LOC_synset_mapping.txt"
+TRAIN_IMAGE_DIR = "/mnt/lustre/users/inf/kajm20/ILSVRC/Data/CLS-LOC/train"
+TRAIN_ANNOTATION_DIR = "/mnt/lustre/users/inf/kajm20/ILSVRC/Annotations/CLS-LOC/train"
+SYNSET_PATH = "/mnt/lustre/users/inf/kajm20/ILSVRC/LOC_synset_mapping.txt"
 CHECKPOINT_DIR = "checkpoints"
 BATCH_SIZE = 64
 NUM_EPOCHS = 20
