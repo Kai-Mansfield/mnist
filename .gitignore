@@ -1,1 +1,2 @@
-ILSVRC/
+ILSVRC/*
+!ILSVRC/LOC_synset_mapping.txt
