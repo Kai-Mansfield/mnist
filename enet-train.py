@@ -16,7 +16,7 @@ SYNSET_PATH = "/mnt/lustre/users/inf/kajm20/ILSVRC/LOC_synset_mapping.txt"
 CHECKPOINT_DIR = "checkpoints"
 BATCH_SIZE = 64
 NUM_EPOCHS = 20
-NUM_WORKERS = min(4, os.cpu_count())
+NUM_WORKERS = 2
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # ---------- SYNSET MAPPING ----------
